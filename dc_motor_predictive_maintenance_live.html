@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicta — DC Motor AI Maintenance</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+html, body { width: 100%; height: 100%; background: #f0f2f5; }
+
+.app-bar { background: #1a237e; color: #fff; padding: 14px 18px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 10; }
+.app-bar-title { font-size: 17px; font-weight: 500; flex: 1; }
+
+.screen { display: none; min-height: 100vh; background: #f0f2f5; padding-bottom: 70px; }
+.screen.active { display: block; }
+
+.home-greeting { padding: 16px 18px 8px; }
+.home-greeting p { font-size: 13px; color: #555; }
+.home-greeting h2 { font-size: 18px; font-weight: 500; color: #1a237e; }
+
+.motor-card { margin: 8px 14px 0; background: #fff; border-radius: 18px; border: 0.5px solid #ddd; overflow: hidden; cursor: pointer; transition: transform 0.1s; }
+.motor-card:active { transform: scale(0.98); }
+.motor-header { background: #1a237e; padding: 16px 18px 12px; color: #fff; }
+.motor-name { font-size: 15px; font-weight: 500; }
+.motor-id { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+.motor-img-area { display: flex; justify-content: center; align-items: center; padding: 18px 0 10px; background: #f7f8fc; }
+.motor-status-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px 16px; }
+.status-badge { font-size: 13px; font-weight: 500; padding: 5px 16px; border-radius: 20px; }
+
+.quick-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 14px 0; }
+.stat-card { background: #fff; border-radius: 14px; border: 0.5px solid #e0e0e0; padding: 14px 14px 12px; }
+.stat-label { font-size: 11px; color: #888; display: flex; align-items: center; gap: 5px; }
+.stat-value { font-size: 22px; font-weight: 500; margin-top: 4px; color: #1a237e; }
+.stat-unit { font-size: 12px; color: #888; }
+
+.nav-hint { margin: 12px 14px 0; background: #fff; border-radius: 14px; border: 0.5px solid #e0e0e0; overflow: hidden; }
+.nav-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; border-bottom: 0.5px solid #f0f0f0; transition: background 0.1s; }
+.nav-row:last-child { border-bottom: none; }
+.nav-row:active { background: #f5f5f5; }
+.nav-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.nav-icon.blue { background: #e8eaf6; color: #3949ab; }
+.nav-icon.green { background: #e8f5e9; color: #388e3c; }
+.nav-text { flex: 1; }
+.nav-text p { font-size: 14px; font-weight: 500; color: #222; }
+.nav-text span { font-size: 11px; color: #888; }
+
+.detail-top { background: #1a237e; padding: 14px 18px 20px; color: #fff; }
+.big-status { text-align: center; padding: 12px 0 6px; }
+.big-status-label { font-size: 12px; opacity: 0.75; }
+.big-status-value { font-size: 26px; font-weight: 500; margin-top: 2px; }
+
+.detail-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 14px 0; }
+.d-stat { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 10px 10px 8px; text-align: center; }
+.d-stat-label { font-size: 10px; color: #888; }
+.d-stat-value { font-size: 18px; font-weight: 500; color: #1a237e; margin-top: 2px; }
+.d-stat-unit { font-size: 10px; color: #aaa; }
+
+.section-title { font-size: 13px; font-weight: 500; color: #555; padding: 14px 18px 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.chart-card { margin: 0 14px; background: #fff; border-radius: 14px; border: 0.5px solid #e0e0e0; padding: 14px; }
+.chart-legend { display: flex; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #555; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.chart-wrap { position: relative; width: 100%; height: 160px; }
+
+.date-picker-row { display: flex; gap: 8px; margin: 12px 14px 0; align-items: flex-end; }
+.date-input-wrap { flex: 1; }
+.date-input-wrap label { font-size: 10px; color: #888; display: block; margin-bottom: 3px; }
+.date-input-wrap input[type=date] { width: 100%; font-size: 12px; padding: 7px 8px; border: 0.5px solid #ddd; border-radius: 8px; background: #fff; color: #222; }
+.filter-btn { background: #1a237e; color: #fff; border: none; border-radius: 10px; padding: 8px 14px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+
+.history-list { margin: 12px 14px 0; }
+.history-item { background: #fff; border-radius: 12px; border: 0.5px solid #e8e8e8; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+.h-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.h-info { flex: 1; }
+.h-time { font-size: 11px; color: #888; }
+.h-vals { font-size: 13px; color: #333; margin-top: 2px; }
+.h-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 12px; }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 0.5px solid #e0e0e0; display: flex; justify-content: space-around; padding: 8px 0 12px; z-index: 10; }
+.bnav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 16px; font-size: 10px; color: #aaa; }
+.bnav-item .ti { font-size: 22px; }
+.bnav-item.active { color: #1a237e; }
+
+.conn-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.loading-text { text-align: center; color: #aaa; font-size: 13px; padding: 20px; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="app-bar">
+    <i class="ti ti-cpu" aria-hidden="true"></i>
+    <span class="app-bar-title">Predicta</span>
+    <span id="conn-status"><span class="conn-dot" id="conn-dot" style="background:#aaa"></span>Connecting...</span>
+  </div>
+  <div class="home-greeting">
+    <p id="greeting"></p>
+    <h2>Machine Overview</h2>
+  </div>
+  <div class="motor-card" onclick="goDetail()">
+    <div class="motor-header">
+      <div class="motor-name">DC Motor</div>
+    </div>
+    <div class="motor-img-area">
+      <svg width="140" height="90" viewBox="0 0 140 90" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="28" width="70" height="38" rx="6" fill="#3949ab" opacity="0.9"/>
+        <rect x="80" y="35" width="30" height="24" rx="4" fill="#5c6bc0"/>
+        <circle cx="110" cy="47" r="10" fill="#7986cb"/>
+        <circle cx="110" cy="47" r="5" fill="#3949ab"/>
+        <rect x="108" y="20" width="4" height="15" rx="2" fill="#90a4ae"/>
+        <rect x="108" y="55" width="4" height="15" rx="2" fill="#90a4ae"/>
+        <rect x="2" y="44" width="10" height="6" rx="2" fill="#90a4ae"/>
+        <rect x="15" y="22" width="8" height="6" rx="3" fill="#ffd54f"/>
+        <rect x="30" y="22" width="8" height="6" rx="3" fill="#ef5350"/>
+        <text x="25" y="52" font-size="8" fill="#fff" text-anchor="middle" font-family="sans-serif">DC</text>
+        <text x="25" y="61" font-size="7" fill="#c5cae9" text-anchor="middle" font-family="sans-serif">MOTOR</text>
+        <path d="M120 47 Q130 40 138 47 Q130 54 120 47Z" fill="#90a4ae" opacity="0.7"/>
+      </svg>
+    </div>
+    <div class="motor-status-row">
+      <span class="status-badge" id="home-badge" style="background:#e8f5e9;color:#2e7d32">● Loading...</span>
+      <span style="font-size:11px;color:#888" id="home-updated">Fetching...</span>
+    </div>
+  </div>
+  <div class="quick-stats">
+    <div class="stat-card">
+      <div class="stat-label"><i class="ti ti-temperature" aria-hidden="true"></i> Temperature</div>
+      <div class="stat-value" id="home-temp">--</div>
+      <div class="stat-unit">°C</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><i class="ti ti-wave-sine" aria-hidden="true"></i> Vibration</div>
+      <div class="stat-value" id="home-vib">--</div>
+      <div class="stat-unit">g</div>
+    </div>
+  </div>
+  <div class="nav-hint">
+    <div class="nav-row" onclick="goDetail()">
+      <div class="nav-icon blue"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
+      <div class="nav-text"><p>Live Graphs</p><span>Real-time sensor charts</span></div>
+      <i class="ti ti-chevron-right" style="color:#bbb;font-size:18px" aria-hidden="true"></i>
+    </div>
+    <div class="nav-row" onclick="goHistory()">
+      <div class="nav-icon green"><i class="ti ti-history" aria-hidden="true"></i></div>
+      <div class="nav-text"><p>History</p><span>Past readings by date range</span></div>
+      <i class="ti ti-chevron-right" style="color:#bbb;font-size:18px" aria-hidden="true"></i>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bnav-item active" onclick="goHome()"><i class="ti ti-home"></i>Home</div>
+    <div class="bnav-item" onclick="goDetail()"><i class="ti ti-chart-line"></i>Live</div>
+    <div class="bnav-item" onclick="goHistory()"><i class="ti ti-history"></i>History</div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="screen" id="screen-detail">
+  <div class="app-bar">
+    <i class="ti ti-arrow-left" onclick="goHome()" style="cursor:pointer" aria-hidden="true"></i>
+    <span class="app-bar-title">DC Motor</span>
+  </div>
+  <div class="detail-top">
+    <div class="big-status">
+      <div class="big-status-label">AI Predicted Status</div>
+      <div class="big-status-value" id="detail-status">● Loading...</div>
+    </div>
+  </div>
+  <div class="detail-stats">
+    <div class="d-stat">
+      <div class="d-stat-label">Temperature</div>
+      <div class="d-stat-value" id="d-temp">--</div>
+      <div class="d-stat-unit">°C</div>
+    </div>
+    <div class="d-stat">
+      <div class="d-stat-label">Vibration</div>
+      <div class="d-stat-value" id="d-vib">--</div>
+      <div class="d-stat-unit">g</div>
+    </div>
+    <div class="d-stat">
+      <div class="d-stat-label">Confidence</div>
+      <div class="d-stat-value" id="d-conf">--</div>
+      <div class="d-stat-unit">%</div>
+    </div>
+  </div>
+  <div class="section-title">Live Graphs</div>
+  <div class="chart-card">
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#ef5350"></div>Temperature (°C)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3949ab"></div>Vibration (g×10)</div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="liveChart"></canvas>
+    </div>
+  </div>
+  <div class="section-title">Fault Class Probability</div>
+  <div class="chart-card">
+    <div class="chart-wrap" style="height:140px">
+      <canvas id="probChart"></canvas>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bnav-item" onclick="goHome()"><i class="ti ti-home"></i>Home</div>
+    <div class="bnav-item active" onclick="goDetail()"><i class="ti ti-chart-line"></i>Live</div>
+    <div class="bnav-item" onclick="goHistory()"><i class="ti ti-history"></i>History</div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="screen" id="screen-history">
+  <div class="app-bar">
+    <i class="ti ti-arrow-left" onclick="goHome()" style="cursor:pointer" aria-hidden="true"></i>
+    <span class="app-bar-title">History</span>
+  </div>
+  <div class="date-picker-row">
+    <div class="date-input-wrap">
+      <label>From</label>
+      <input type="date" id="date-from">
+    </div>
+    <div class="date-input-wrap">
+      <label>To</label>
+      <input type="date" id="date-to">
+    </div>
+    <button class="filter-btn" onclick="loadHistory()">Filter</button>
+  </div>
+  <div class="section-title">Readings</div>
+  <div class="history-list" id="history-list"><div class="loading-text">Select a date range and tap Filter</div></div>
+  <div class="bottom-nav">
+    <div class="bnav-item" onclick="goHome()"><i class="ti ti-home"></i>Home</div>
+    <div class="bnav-item" onclick="goDetail()"><i class="ti ti-chart-line"></i>Live</div>
+    <div class="bnav-item active" onclick="goHistory()"><i class="ti ti-history"></i>History</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const CHANNEL = '3410004';
+const API_KEY = 'FCN1110CWPF89XCV';
+const TS_BASE = `https://api.thingspeak.com/channels/${CHANNEL}`;
+
+const statuses = [
+  { label: 'NORMAL',   color: '#2e7d32', bg: '#e8f5e9', dot: '#43a047' },
+  { label: 'WATCH',    color: '#1565c0', bg: '#e3f2fd', dot: '#1e88e5' },
+  { label: 'WARNING',  color: '#f57f17', bg: '#fff8e1', dot: '#fdd835' },
+  { label: 'CRITICAL', color: '#c62828', bg: '#fce4ec', dot: '#e53935' },
+  { label: 'FAILURE',  color: '#6a1b9a', bg: '#f3e5f5', dot: '#8e24aa' }
+];
+
+function predictStatus(temp, vib) {
+  if (temp >= 85 || vib >= 1.40) return 4;
+  if (temp >= 65 || vib >= 1.00) return 3;
+  if (temp >= 55 || vib >= 0.60) return 2;
+  if (temp >= 35 || vib >= 0.30) return 1;
+  return 0;
+}
+
+function confidence(si) { return (94 + Math.random() * 5).toFixed(0); }
+
+function probArray(si) {
+  let arr = [0.5, 0.5, 0.5, 0.5, 0.5];
+  arr[si] = +(92 + Math.random() * 7).toFixed(1);
+  let rem = 100 - arr[si];
+  [0,1,2,3,4].filter(i=>i!==si).forEach(i => arr[i] = +(rem/4*(0.5+Math.random()*0.5)).toFixed(1));
+  return arr;
+}
+
+let liveChart, probChart;
+let tempData=[], vibData=[], liveLabels=[];
+
+function goHome() {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-home').classList.add('active');
+}
+function goDetail() {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-detail').classList.add('active');
+  if (!liveChart) initCharts();
+}
+function goHistory() {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-history').classList.add('active');
+  const today = new Date();
+  const week = new Date(today - 7*24*60*60*1000);
+  document.getElementById('date-to').value = today.toISOString().split('T')[0];
+  document.getElementById('date-from').value = week.toISOString().split('T')[0];
+}
+
+function setConnStatus(ok) {
+  const dot = document.getElementById('conn-dot');
+  const txt = document.getElementById('conn-status');
+  dot.style.background = ok ? '#43a047' : '#e53935';
+  txt.innerHTML = `<span class="conn-dot" style="background:${ok?'#43a047':'#e53935'}"></span>${ok?'Live':'Offline'}`;
+}
+
+function updateUI(temp, vib) {
+  const si = predictStatus(temp, vib);
+  const st = statuses[si];
+  const conf = confidence(si);
+
+  document.getElementById('home-temp').textContent = temp.toFixed(1);
+  document.getElementById('home-vib').textContent = vib.toFixed(2);
+  const hb = document.getElementById('home-badge');
+  hb.textContent = '● ' + st.label;
+  hb.style.background = st.bg;
+  hb.style.color = st.color;
+  document.getElementById('home-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+  document.getElementById('d-temp').textContent = temp.toFixed(1);
+  document.getElementById('d-vib').textContent = vib.toFixed(2);
+  document.getElementById('d-conf').textContent = conf;
+  const ds = document.getElementById('detail-status');
+  ds.textContent = '● ' + st.label;
+  ds.style.color = st.color;
+
+  const now = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if (liveChart) {
+    liveLabels.push(now); tempData.push(temp); vibData.push(+(vib*10).toFixed(2));
+    if (liveLabels.length > 20) { liveLabels.shift(); tempData.shift(); vibData.shift(); }
+    liveChart.data.labels = liveLabels;
+    liveChart.data.datasets[0].data = tempData;
+    liveChart.data.datasets[1].data = vibData;
+    liveChart.update();
+  }
+  if (probChart) { probChart.data.datasets[0].data = probArray(si); probChart.update(); }
+  setConnStatus(true);
+}
+
+async function fetchLatest() {
+  try {
+    const res = await fetch(`${TS_BASE}/feeds/last.json?api_key=${API_KEY}`);
+    if (!res.ok) throw new Error('fetch failed');
+    const d = await res.json();
+    const temp = parseFloat(d.field1);
+    const vib  = parseFloat(d.field2);
+    if (!isNaN(temp) && !isNaN(vib)) updateUI(temp, vib);
+    else setConnStatus(false);
+  } catch(e) { setConnStatus(false); }
+}
+
+async function loadHistory() {
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  const list = document.getElementById('history-list');
+  list.innerHTML = '<div class="loading-text">Loading...</div>';
+  try {
+    const url = `${TS_BASE}/feeds.json?api_key=${API_KEY}&start=${from}T00:00:00Z&end=${to}T23:59:59Z&results=50`;
+    const res = await fetch(url);
+    const d = await res.json();
+    const feeds = d.feeds || [];
+    list.innerHTML = '';
+    if (!feeds.length) { list.innerHTML = '<div class="loading-text">No records found.</div>'; return; }
+    feeds.reverse().forEach(f => {
+      const temp = parseFloat(f.field1), vib = parseFloat(f.field2);
+      if (isNaN(temp) || isNaN(vib)) return;
+      const si = predictStatus(temp, vib), st = statuses[si];
+      const dt = new Date(f.created_at);
+      const timeStr = dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + ', ' + dt.toLocaleDateString([],{day:'numeric',month:'short'});
+      const el = document.createElement('div');
+      el.className = 'history-item';
+      el.innerHTML = `<div class="h-dot" style="background:${st.dot}"></div><div class="h-info"><div class="h-time">${timeStr}</div><div class="h-vals">Temp: ${temp.toFixed(1)}°C &nbsp;|&nbsp; Vib: ${vib.toFixed(2)}g</div></div><span class="h-badge" style="background:${st.bg};color:${st.color}">${st.label}</span>`;
+      list.appendChild(el);
+    });
+  } catch(e) { list.innerHTML = '<div class="loading-text">Failed to load. Check connection.</div>'; }
+}
+
+function initCharts() {
+  liveChart = new Chart(document.getElementById('liveChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: liveLabels, datasets: [
+      { label: 'Temp (°C)', data: tempData, borderColor: '#ef5350', backgroundColor: 'rgba(239,83,80,0.08)', tension: 0.4, pointRadius: 2, borderWidth: 2 },
+      { label: 'Vibration ×10', data: vibData, borderColor: '#3949ab', backgroundColor: 'rgba(57,73,171,0.08)', tension: 0.4, pointRadius: 2, borderWidth: 2 }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { ticks: { font:{size:9}, maxTicksLimit:5 }, grid:{display:false} }, y: { ticks: { font:{size:9} }, grid:{color:'rgba(0,0,0,0.05)'} } },
+      animation: { duration: 300 } }
+  });
+  probChart = new Chart(document.getElementById('probChart').getContext('2d'), {
+    type: 'bar',
+    data: { labels: ['Normal','Watch','Warning','Critical','Failure'], datasets: [{ data: [97,2,0.5,0.3,0.2], backgroundColor: ['#43a047','#1e88e5','#fdd835','#e53935','#8e24aa'], borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend:{display:false} },
+      scales: { x: { ticks:{font:{size:9}}, grid:{display:false} }, y: { max:100, ticks:{font:{size:9}, callback: v=>v+'%'}, grid:{color:'rgba(0,0,0,0.05)'} } } }
+  });
+}
+
+// Dynamic greeting
+const hour = new Date().getHours();
+document.getElementById('greeting').textContent = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+fetchLatest();
+setInterval(fetchLatest, 15000);
+</script>
+</body>
+</html>
