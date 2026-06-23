@@ -332,8 +332,8 @@ async function fetchLatest() {
     const res = await fetch(`${TS_BASE}/feeds/last.json?api_key=${API_KEY}`);
     if (!res.ok) throw new Error('fetch failed');
     const d = await res.json();
-    const temp = parseFloat(d.field1);
-    const vib  = parseFloat(d.field2);
+    const vib  = parseFloat(d.field1);
+    const temp = parseFloat(d.field2);
     if (!isNaN(temp) && !isNaN(vib)) updateUI(temp, vib);
     else setConnStatus(false);
   } catch(e) { setConnStatus(false); }
@@ -352,7 +352,7 @@ async function loadHistory() {
     list.innerHTML = '';
     if (!feeds.length) { list.innerHTML = '<div class="loading-text">No records found.</div>'; return; }
     feeds.reverse().forEach(f => {
-      const temp = parseFloat(f.field1), vib = parseFloat(f.field2);
+      const vib = parseFloat(f.field1), temp = parseFloat(f.field2);
       if (isNaN(temp) || isNaN(vib)) return;
       const si = predictStatus(temp, vib), st = statuses[si];
       const dt = new Date(f.created_at);
